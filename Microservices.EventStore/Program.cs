@@ -1,5 +1,4 @@
 ﻿using EventStore.Client;
-using System.Text.Json;
 
 string connectionString = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
@@ -11,24 +10,38 @@ var client = new EventStoreClient(settings);
 #endregion
 
 #region Event oluşturma ve Stream'e gönderme
-OrderPlacedEvent orderPlacedEvent = new()
-{
-    OrderId = 1,
-    TotalAmount = 2000
-};
+//OrderPlacedEvent orderPlacedEvent = new()
+//{
+//    OrderId = 1,
+//    TotalAmount = 2000
+//};
 
 //Gönderecek olduğumuz datayı event store'a yollamak için önce eventdata türüne dönüştürmemiz gerekiyor.
-EventData eventData = new(
-    eventId: Uuid.NewUuid(),
-    type: orderPlacedEvent.GetType().Name,
-    data: JsonSerializer.SerializeToUtf8Bytes(orderPlacedEvent)
+//EventData eventData = new(
+//    eventId: Uuid.NewUuid(),
+//    type: orderPlacedEvent.GetType().Name,
+//    data: JsonSerializer.SerializeToUtf8Bytes(orderPlacedEvent)
+//    );
+
+//await client.AppendToStreamAsync(
+//    streamName : "order-stream",
+//    expectedState : StreamState.Any,
+//    eventData : new[] {eventData}
+//    );
+#endregion
+
+#region Stream Okuma
+//Bütün streamleri getirir.
+//await client.ReadAllAsync();
+
+//Adını vermiş olduğumuz stream'i getirir.
+var events =  client.ReadStreamAsync(
+    streamName : "order-stream",
+    direction : Direction.Forwards,
+    revision : StreamPosition.Start
     );
 
-await client.AppendToStreamAsync(
-    streamName : "order-stream",
-    expectedState : StreamState.Any,
-    eventData : new[] {eventData}
-    );
+var datas = await events.ToListAsync();
 #endregion
 
 Console.ReadLine();
