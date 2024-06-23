@@ -1,4 +1,5 @@
 ﻿using EventStore.Client;
+using System.Text.Json;
 
 string connectionString = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
@@ -35,13 +36,28 @@ var client = new EventStoreClient(settings);
 //await client.ReadAllAsync();
 
 //Adını vermiş olduğumuz stream'i getirir.
-var events =  client.ReadStreamAsync(
-    streamName : "order-stream",
-    direction : Direction.Forwards,
-    revision : StreamPosition.Start
-    );
+//var events =  client.ReadStreamAsync(
+//    streamName : "order-stream",
+//    direction : Direction.Forwards,
+//    revision : StreamPosition.Start
+//    );
 
-var datas = await events.ToListAsync();
+//var datas = await events.ToListAsync();
+#endregion
+
+#region Stream Subscription
+await client.SubscribeToStreamAsync(
+    streamName : "order-stream",
+    start :  FromStream.Start,
+    eventAppeared : async(streamSubscription, resolvedEvent, CancellationToken) =>
+    {
+        OrderPlacedEvent @event = JsonSerializer
+        .Deserialize<OrderPlacedEvent>(resolvedEvent.Event.Data.ToArray());
+
+        Console.WriteLine(JsonSerializer.Serialize(@event));
+    },
+    subscriptionDropped: (streamSubscription, subscriptionDroppedReason, exception) => Console.WriteLine("Disconnected..!")
+    );
 #endregion
 
 Console.ReadLine();
